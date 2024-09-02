@@ -119,7 +119,7 @@ internal static class DictionarySerializer
         var element = new XElement(tag.Name, tag.Namespace);
         element.AddChild(list.ToArray());
 
-        return new XObject[] { element };
+        return [element];
     }
 
     #endregion Serialize
@@ -137,19 +137,19 @@ internal static class DictionarySerializer
         var valueAtt = prop.GetAttribute<DFeDictionaryValueAttribute>();
 
         var dictionary = (IDictionary)Activator.CreateInstance(prop.PropertyType);
+        
         var args = prop.PropertyType.GetGenericArguments();
-
         var keyType = ObjectType.From(args[0]);
         var valueType = ObjectType.From(args[1]);
 
-        var elements = parent.ElementsAnyNs(keyAtt.AsAttribute ? valueAtt.Name : tag.ItemName);
+        var elements = parent?.ElementsAnyNs(keyAtt.AsAttribute ? valueAtt.Name : tag.ItemName) ?? [];
         foreach (var element in elements)
         {
             object key;
             object value;
             if (keyAtt.AsAttribute)
             {
-                var keyElement = (XObject)element.Attributes(keyAtt.Name).FirstOrDefault();
+                XObject keyElement = element.Attributes(keyAtt.Name).FirstOrDefault();
                 key = PrimitiveSerializer.Deserialize(keyAtt, keyElement, null, prop);
                 value = valueType == ObjectType.PrimitiveType ? PrimitiveSerializer.Deserialize(valueAtt, element, parentItem, prop) :
                     ObjectSerializer.Deserialize(args[1], element, options);
